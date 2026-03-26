@@ -27,11 +27,9 @@
 
 ## What is this?
 
-In 2009, George Hotz built **EDA** (Embedded Disassembler & Analyser) to crack the iPhone bootrom. He was 19. He built every piece from scratch — the ARM decoder, the control flow analyzer, the web frontend — and used it to find the exploit that unlocked every iPhone on earth.
+A **purpose-built reverse engineering platform** for one target: the Nintendo Switch firmware.
 
-**Switchblade** is the same idea applied to the Nintendo Switch in 2026.
-
-It's not a plugin for Ghidra. It's not a wrapper around Capstone. It's a **purpose-built reverse engineering platform** for one target: the Nintendo Switch firmware. Every design decision — the NSO parser, the AArch64 decoder, the syscall labeler, the firmware diff engine — exists to find vulnerabilities in Nintendo's code.
+It's not a plugin for Ghidra. It's not a wrapper around Capstone. Every component — the NSO parser, the AArch64 decoder, the syscall labeler, the firmware diff engine — is built from scratch to find vulnerabilities in Nintendo's code.
 
 ```
 encrypted .nca firmware
@@ -143,7 +141,7 @@ nso.hexdump("text", 0, 128)  # hex dump any section
 | Service | Size | What It Does | Why It Matters |
 |---------|------|-------------|----------------|
 | **es** | 1MB | eShop / entitlement system | Game DRM. Crack this = free games. |
-| **boot2.ProdBoot** | 184KB | Second-stage bootloader | **The holy grail.** Bug here = unpatchable. Like limera1n. |
+| **boot2.ProdBoot** | 184KB | Second-stage bootloader | **The holy grail.** Bug here = potentially unpatchable. |
 | **account** | 2.3MB | Nintendo account system | Auth tokens, identity |
 | **ns** | 3.9MB | Nintendo services core | App management, permissions |
 
@@ -245,9 +243,7 @@ M10 SHIP            [    ]  "the tool is packaged and ready"
 
 <h2 id="philosophy">Philosophy</h2>
 
-> *"In 2009, George Hotz built a tool to crack the iPhone. He was 19. He built every piece from scratch. We're doing the same thing to the Nintendo Switch."*
-
-This project follows the **geohot doctrine**:
+This project follows a simple doctrine:
 
 - **Build what you need.** This isn't a general-purpose RE framework. It's a weapon aimed at one target.
 - **Ship fast, iterate later.** A working prototype beats a perfect plan.
@@ -276,7 +272,6 @@ Extracted:  hactool + prod.keys
 - [NSO Format Specification](https://switchbrew.org/wiki/NSO) -- Header layout we parse in loader.py
 - [Switch Syscalls](https://switchbrew.org/wiki/SVC) -- Horizon OS kernel calls
 - [ARM Architecture Reference Manual](https://developer.arm.com/documentation/ddi0487/latest/) -- AArch64 instruction encoding
-- [George Hotz's EDA (2009)](https://github.com/geohot/eda-reversing) -- The original inspiration
 - [hactool](https://github.com/SciresM/hactool) -- NCA decryption tool
 - [Atmosphere-NX](https://github.com/Atmosphere-NX/Atmosphere) -- Switch custom firmware (reference for OS internals)
 

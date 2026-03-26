@@ -1,68 +1,72 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/target-Nintendo%20Switch-e60012?style=for-the-badge&logo=nintendo-switch&logoColor=white" />
-  <img src="https://img.shields.io/badge/arch-AArch64-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/firmware-20.1.5-green?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/binaries-74%20services-orange?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/python-3.10+-yellow?style=for-the-badge&logo=python&logoColor=white" />
+  <img src="logo.png" width="420" alt="SwitchBlade" />
 </p>
 
-<h1 align="center">SWITCHBLADE</h1>
+<p align="center">
+  <img src="https://img.shields.io/badge/%F0%9F%8E%AE_target-Nintendo%20Switch-e60012?style=for-the-badge&logoColor=white" />
+  <img src="https://img.shields.io/badge/%F0%9F%94%A7_arch-AArch64-4361ee?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/%F0%9F%93%A6_firmware-20.1.5-10b981?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/%F0%9F%92%80_binaries-74%20services-f59e0b?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/%F0%9F%90%8D_python-3.10+-3776ab?style=for-the-badge&logo=python&logoColor=white" />
+</p>
+
+<h1 align="center">🗡️ SWITCHBLADE</h1>
 
 <p align="center">
   <strong>A Nintendo Switch firmware reverse engineering platform built from scratch.</strong>
   <br />
-  <em>74 ARM64 system binaries. 261MB of Nintendo's operating system. Every secret is in the code.</em>
+  <em>🔓 74 ARM64 system binaries &bull; 📦 261MB of Nintendo's OS &bull; 🔍 Every secret is in the code.</em>
 </p>
 
 <p align="center">
-  <a href="#architecture">Architecture</a> &bull;
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#modules">Modules</a> &bull;
-  <a href="#targets">High-Value Targets</a> &bull;
-  <a href="#roadmap">Roadmap</a> &bull;
-  <a href="#philosophy">Philosophy</a>
+  <a href="#-architecture">🏗️ Architecture</a> &bull;
+  <a href="#-quick-start">🚀 Quick Start</a> &bull;
+  <a href="#-modules">📦 Modules</a> &bull;
+  <a href="#-high-value-targets">🎯 Targets</a> &bull;
+  <a href="#-roadmap">🗺️ Roadmap</a> &bull;
+  <a href="#-philosophy">💡 Philosophy</a>
 </p>
 
 ---
 
-## What is this?
+## 🔍 What is this?
 
 A **purpose-built reverse engineering platform** for one target: the Nintendo Switch firmware.
 
 It's not a plugin for Ghidra. It's not a wrapper around Capstone. Every component — the NSO parser, the AArch64 decoder, the syscall labeler, the firmware diff engine — is built from scratch to find vulnerabilities in Nintendo's code.
 
 ```
-encrypted .nca firmware
+🔒 encrypted .nca firmware
        |
-       v  (hactool + prod.keys)
-decrypted .nso binaries
+       v  🔑 (hactool + prod.keys)
+🔓 decrypted .nso binaries
        |
-       v  (switchblade)
-disassembled + analyzed + vulnerability-scanned
+       v  🗡️ (switchblade)
+💀 disassembled + analyzed + vulnerability-scanned
 ```
 
-## Why not just use Ghidra?
+## ⚔️ Why not just use Ghidra?
 
-| | Ghidra | Switchblade |
+| | 🦖 Ghidra | 🗡️ Switchblade |
 |---|---|---|
-| Load an NSO | Manual setup, no Switch context | One command, auto-detected |
-| Syscall labels | Generic SVC numbers | Named Horizon OS calls (svcSendSyncRequest, svcConnectToNamedPort...) |
-| IPC tracing | Nothing | Maps inter-service communication across all 74 binaries |
-| Firmware diffing | Load two files manually, diff by hand | One command: show what Nintendo patched |
-| Browse all services | Open 74 files one at a time | Service browser — click ssl, nfc, bluetooth, explore |
-| Vuln scanning | Manual analysis | AI-powered pattern detection across entire firmware |
-| Setup time | Download 500MB, configure, learn the UI | `python3 switchblade.py ssl.nso` |
+| 📂 Load an NSO | Manual setup, no Switch context | One command, auto-detected |
+| 🏷️ Syscall labels | Generic SVC numbers | Named Horizon OS calls (`svcSendSyncRequest`, `svcConnectToNamedPort`...) |
+| 🔗 IPC tracing | Nothing | Maps inter-service communication across all 74 binaries |
+| 🔄 Firmware diffing | Load two files manually, diff by hand | One command: show what Nintendo patched |
+| 🗂️ Browse services | Open 74 files one at a time | Service browser — click ssl, nfc, bluetooth, explore |
+| 🤖 Vuln scanning | Manual analysis | AI-powered pattern detection across entire firmware |
+| ⏱️ Setup time | Download 500MB, configure, learn the UI | `python3 switchblade.py ssl.nso` |
 
 ---
 
-<h2 id="architecture">Architecture</h2>
+## 🏗️ Architecture
 
 ```
-.nso file --> LOADER --> raw bytes --> DECODER --> instructions --> ANALYZER --> functions --> API --> UI
-                                                        |
-                                                        v
-                                                  VULN SCANNER
-                                                  DIFF ENGINE
+📄 .nso file ──▶ LOADER ──▶ raw bytes ──▶ DECODER ──▶ instructions ──▶ ANALYZER ──▶ functions ──▶ API ──▶ UI
+                                                            |
+                                                            ▼
+                                                      🤖 VULN SCANNER
+                                                      🔄 DIFF ENGINE
 
  6 components. each one is a standalone python file.
  each one works by itself. each one you can test from the command line.
@@ -70,22 +74,22 @@ disassembled + analyzed + vulnerability-scanned
 ```
 
 ```
-switchblade/
-  loader.py       <-- M1: parse NSO header, extract .text/.rodata/.data
-  decoder.py      <-- M2: 4 bytes -> ARM64 instruction
-  analyzer.py     <-- M3-M4: find functions, build CFG, label syscalls
-  api.py          <-- M5: FastAPI serving JSON
-  diff.py         <-- M7: diff two firmware versions
-  scanner.py      <-- M8: pattern + AI vuln scanner
-  decompiler.py   <-- M9: ARM64 -> C pseudocode
-  ui/
-    index.html    <-- M6: three-panel layout
-    app.js        <-- M6: fetch API, render disasm + CFG
+🗡️ switchblade/
+  📄 loader.py       ◀── M1: parse NSO header, extract .text/.rodata/.data
+  📄 decoder.py      ◀── M2: 4 bytes ──▶ ARM64 instruction
+  📄 analyzer.py     ◀── M3-M4: find functions, build CFG, label syscalls
+  📄 api.py          ◀── M5: FastAPI serving JSON
+  📄 diff.py         ◀── M7: diff two firmware versions
+  📄 scanner.py      ◀── M8: pattern + AI vuln scanner
+  📄 decompiler.py   ◀── M9: ARM64 ──▶ C pseudocode
+  📁 ui/
+    📄 index.html    ◀── M6: three-panel layout
+    📄 app.js        ◀── M6: fetch API, render disasm + CFG
 ```
 
 ---
 
-<h2 id="quick-start">Quick Start</h2>
+## 🚀 Quick Start
 
 ### Parse a Switch binary
 
@@ -106,179 +110,181 @@ b'NSO0'  version=0  flags=56
   00000030  d0 41 09 94 60 fe ff 10 41 19 00 b0 21 20 03 91  .A..`...A...! ..
 ```
 
-That's real Nintendo ARM64 machine code from the Switch's SSL/TLS service.
+> 🔬 That's real Nintendo ARM64 machine code from the Switch's SSL/TLS service.
 
-### Use as a library
+### 📚 Use as a library
 
 ```python
 from loader import NSO
 
 nso = NSO("ssl.nso")
-nso.text      # raw ARM64 code bytes (2.4MB)
-nso.rodata    # string constants, lookup tables
-nso.data      # global variables
-nso.hexdump("text", 0, 128)  # hex dump any section
+nso.text      # 💻 raw ARM64 code bytes (2.4MB)
+nso.rodata    # 📝 string constants, lookup tables
+nso.data      # 📊 global variables
+nso.hexdump("text", 0, 128)  # 🔍 hex dump any section
 ```
 
 ---
 
-<h2 id="targets">High-Value Targets</h2>
+## 🎯 High-Value Targets
 
-74 system services extracted from Nintendo Switch firmware 20.1.5. Sorted by attack value:
+> 74 system services extracted from Nintendo Switch firmware 20.1.5. Sorted by attack value.
 
-### Tier 1 -- Network + Crypto (Remote Attack Surface)
+### 🔴 Tier 1 — Network + Crypto (Remote Attack Surface)
 
 | Service | Size | What It Does | Why It Matters |
 |---------|------|-------------|----------------|
-| **ssl** | 3.3MB | TLS/SSL cryptographic stack | Every encrypted connection. MitM on all Switches. |
-| **bsdsocket** | 1.6MB | BSD socket network stack | Buffer overflow = remote code execution |
-| **bluetooth** | 1.4MB | Bluetooth stack | Wireless proximity attack. No internet needed. |
-| **nfc** | 1MB | NFC / Amiibo handler | Malformed NFC tag = exploit via physical access |
-| **wlan** | 2.1MB | WiFi driver | Processes untrusted wireless frames |
+| 🔐 **ssl** | 3.3MB | TLS/SSL cryptographic stack | Every encrypted connection. MitM on all Switches. |
+| 🌐 **bsdsocket** | 1.6MB | BSD socket network stack | Buffer overflow = remote code execution |
+| 📡 **bluetooth** | 1.4MB | Bluetooth stack | Wireless proximity attack. No internet needed. |
+| 📱 **nfc** | 1MB | NFC / Amiibo handler | Malformed NFC tag = exploit via physical access |
+| 📶 **wlan** | 2.1MB | WiFi driver | Processes untrusted wireless frames |
 
-### Tier 2 -- System Security
+### 🟠 Tier 2 — System Security
 
 | Service | Size | What It Does | Why It Matters |
 |---------|------|-------------|----------------|
-| **es** | 1MB | eShop / entitlement system | Game DRM. Crack this = free games. |
-| **boot2.ProdBoot** | 184KB | Second-stage bootloader | **The holy grail.** Bug here = potentially unpatchable. |
-| **account** | 2.3MB | Nintendo account system | Auth tokens, identity |
-| **ns** | 3.9MB | Nintendo services core | App management, permissions |
+| 🛒 **es** | 1MB | eShop / entitlement system | Game DRM. Crack this = free games. |
+| 💀 **boot2.ProdBoot** | 184KB | Second-stage bootloader | **The holy grail.** Bug here = potentially unpatchable. |
+| 👤 **account** | 2.3MB | Nintendo account system | Auth tokens, identity |
+| ⚙️ **ns** | 3.9MB | Nintendo services core | App management, permissions |
 
-### Tier 3 -- Parser Targets (Fuzzing Goldmine)
-
-| Service | Size | What It Does |
-|---------|------|-------------|
-| **jpegdec** | 340KB | JPEG decoder. Malformed image = memory corruption. |
-| **hid** | 2.2MB | Controller input. Malformed USB/BT input = crash. |
-| **audio** | 1.6MB | Audio processing. Complex format parsing. |
-| **capsrv** | 676KB | Screenshot service. Image parser bugs. |
-
-### Tier 4 -- Largest Attack Surface
+### 🟡 Tier 3 — Parser Targets (Fuzzing Goldmine)
 
 | Service | Size | What It Does |
 |---------|------|-------------|
-| **qlaunch** | 18.9MB | Home menu. Biggest binary. |
-| **LibAppletWeb** | 12.3MB | Web browser. Historically #1 console exploit vector. |
-| **LibAppletShop** | 12.3MB | eShop. Same web engine. |
-| **error** | 11.8MB | Error display. Surprisingly large. |
+| 🖼️ **jpegdec** | 340KB | JPEG decoder. Malformed image = memory corruption. |
+| 🎮 **hid** | 2.2MB | Controller input. Malformed USB/BT input = crash. |
+| 🔊 **audio** | 1.6MB | Audio processing. Complex format parsing. |
+| 📸 **capsrv** | 676KB | Screenshot service. Image parser bugs. |
+
+### 🟢 Tier 4 — Largest Attack Surface
+
+| Service | Size | What It Does |
+|---------|------|-------------|
+| 🏠 **qlaunch** | 18.9MB | Home menu. Biggest binary. |
+| 🌍 **LibAppletWeb** | 12.3MB | Web browser. Historically #1 console exploit vector. |
+| 🛍️ **LibAppletShop** | 12.3MB | eShop. Same web engine. |
+| ❌ **error** | 11.8MB | Error display. Surprisingly large. |
 
 ---
 
-<h2 id="modules">Modules</h2>
+## 📦 Modules
 
-| Module | File | Status | What It Does |
-|--------|------|--------|-------------|
-| **M1: Loader** | `loader.py` | DONE | Parse NSO header, extract .text/.rodata/.data sections |
-| **M2: Decoder** | `decoder.py` | IN PROGRESS | 4 bytes -> ARM64 assembly instruction |
-| **M3: Syscalls** | `analyzer.py` | TODO | Find all SVC instructions, label with Horizon OS names |
-| **M4: Analyzer** | `analyzer.py` | TODO | Discover functions, build control flow graphs, xrefs |
-| **M5: API** | `api.py` | TODO | FastAPI serving all 74 services as JSON |
-| **M6: UI** | `ui/` | TODO | Web-based service browser, disasm view, CFG renderer |
-| **M7: Diff** | `diff.py` | TODO | Compare firmware versions, find patched functions |
-| **M8: Scanner** | `scanner.py` | TODO | AI-powered vulnerability pattern detection |
-| **M9: Decompiler** | `decompiler.py` | TODO | ARM64 -> C pseudocode |
-
----
-
-<h2 id="roadmap">Roadmap</h2>
-
-```
-M1  LOADER         [DONE]  "i can open any Switch binary and see its guts"
-M2  DECODER         [....]  "i can read ARM64 machine code as assembly"
-M3  SYSCALLS        [    ]  "i know every kernel call in every binary"
-M4  ANALYZER        [    ]  "i can find every function and trace its control flow"
-M5  API + BROWSER   [    ]  "i can explore all 74 services in my browser"
-M6  UI + GRAPH      [    ]  "i can see function graphs and navigate visually"
-M7  DIFF ENGINE     [    ]  "i can see what Nintendo patched between versions"
-M8  VULN SCANNER    [    ]  "AI flags suspicious functions across all binaries"
-M9  DECOMPILER      [    ]  "i can read ARM64 as C code"
-M10 SHIP            [    ]  "the tool is packaged and ready"
-```
+| | Module | File | Status | What It Does |
+|---|--------|------|--------|-------------|
+| 📂 | **M1: Loader** | `loader.py` | ✅ Done | Parse NSO header, extract .text/.rodata/.data sections |
+| 🔬 | **M2: Decoder** | `decoder.py` | 🔨 In Progress | 4 bytes -> ARM64 assembly instruction |
+| 📡 | **M3: Syscalls** | `analyzer.py` | ⬜ Todo | Find all SVC instructions, label with Horizon OS names |
+| 🧠 | **M4: Analyzer** | `analyzer.py` | ⬜ Todo | Discover functions, build control flow graphs, xrefs |
+| 🌐 | **M5: API** | `api.py` | ⬜ Todo | FastAPI serving all 74 services as JSON |
+| 🎨 | **M6: UI** | `ui/` | ⬜ Todo | Web-based service browser, disasm view, CFG renderer |
+| 🔄 | **M7: Diff** | `diff.py` | ⬜ Todo | Compare firmware versions, find patched functions |
+| 🤖 | **M8: Scanner** | `scanner.py` | ⬜ Todo | AI-powered vulnerability pattern detection |
+| 📝 | **M9: Decompiler** | `decompiler.py` | ⬜ Todo | ARM64 -> C pseudocode |
 
 ---
 
-## The Vulnerability Research Pipeline
+## 🗺️ Roadmap
 
 ```
-  STEP 1: EXTRACT
-  .nca (encrypted) --> hactool + prod.keys --> .nso (ARM64 binaries)
+✅ M1  LOADER         "i can open any Switch binary and see its guts"
+🔨 M2  DECODER        "i can read ARM64 machine code as assembly"
+⬜ M3  SYSCALLS       "i know every kernel call in every binary"
+⬜ M4  ANALYZER       "i can find every function and trace its control flow"
+⬜ M5  API + BROWSER  "i can explore all 74 services in my browser"
+⬜ M6  UI + GRAPH     "i can see function graphs and navigate visually"
+⬜ M7  DIFF ENGINE    "i can see what Nintendo patched between versions"
+⬜ M8  VULN SCANNER   "AI flags suspicious functions across all binaries"
+⬜ M9  DECOMPILER     "i can read ARM64 as C code"
+⬜ M10 SHIP           "the tool is packaged and ready"
+```
 
-  STEP 2: ANALYZE
-  .nso --> switchblade --> functions, syscalls, CFG, xrefs
+---
 
-  STEP 3: HUNT
-  Strategy: follow untrusted input through the code
+## 💀 The Vulnerability Research Pipeline
 
-  network packets  --> ssl, bsdsocket
-  wireless frames  --> bluetooth, wlan
-  NFC tags         --> nfc
-  USB devices      --> hid
-  web content      --> LibAppletWeb
-  images           --> jpegdec, capsrv
+```
+  🔓 STEP 1: EXTRACT
+  .nca (encrypted) ──▶ hactool + prod.keys ──▶ .nso (ARM64 binaries)
 
-  STEP 4: DIFF
-  firmware 20.1.5 vs 20.2.0 --> what did Nintendo patch?
+  🔬 STEP 2: ANALYZE
+  .nso ──▶ switchblade ──▶ functions, syscalls, CFG, xrefs
+
+  🎯 STEP 3: HUNT
+  strategy: follow untrusted input through the code
+
+  🌐 network packets  ──▶ ssl, bsdsocket
+  📡 wireless frames  ──▶ bluetooth, wlan
+  📱 NFC tags         ──▶ nfc
+  🎮 USB devices      ──▶ hid
+  🌍 web content      ──▶ LibAppletWeb
+  🖼️ images           ──▶ jpegdec, capsrv
+
+  🔄 STEP 4: DIFF
+  firmware 20.1.5 vs 20.2.0 ──▶ what did Nintendo patch?
   patches reveal what was broken. broken = exploitable on older versions.
 
-  STEP 5: REPORT
-  find bug --> write report --> responsible disclosure --> career
+  📋 STEP 5: REPORT
+  find bug ──▶ write report ──▶ responsible disclosure ──▶ career 🚀
 ```
 
 ---
 
-## Vulnerability Patterns to Hunt
+## 🔎 Vulnerability Patterns to Hunt
 
-| Pattern | What to Look For | Impact |
-|---------|-----------------|--------|
-| **Unchecked memcpy** | Size from user input without bounds check | Buffer overflow -> code execution |
-| **Integer overflow** | `size * count` wrapping to small value | Heap overflow |
-| **Format string** | User data passed to printf-like functions | Arbitrary read/write |
-| **Use-after-free** | Object freed then accessed via stale pointer | Code execution |
-| **Missing IPC validation** | Command handler trusts sizes from IPC message | Privilege escalation |
-| **Type confusion** | Casting based on attacker-controlled field | Fake vtable -> code execution |
-| **Off-by-one** | `<=` instead of `<` in bounds check | Corrupt adjacent data |
+| | Pattern | What to Look For | Impact |
+|---|---------|-----------------|--------|
+| 💥 | **Unchecked memcpy** | Size from user input without bounds check | Buffer overflow -> code execution |
+| 🔢 | **Integer overflow** | `size * count` wrapping to small value | Heap overflow |
+| 📝 | **Format string** | User data passed to printf-like functions | Arbitrary read/write |
+| 👻 | **Use-after-free** | Object freed then accessed via stale pointer | Code execution |
+| 🔓 | **Missing IPC validation** | Command handler trusts sizes from IPC message | Privilege escalation |
+| 🎭 | **Type confusion** | Casting based on attacker-controlled field | Fake vtable -> code execution |
+| 1️⃣ | **Off-by-one** | `<=` instead of `<` in bounds check | Corrupt adjacent data |
 
 ---
 
-<h2 id="philosophy">Philosophy</h2>
+## 💡 Philosophy
 
 This project follows a simple doctrine:
 
-- **Build what you need.** This isn't a general-purpose RE framework. It's a weapon aimed at one target.
-- **Ship fast, iterate later.** A working prototype beats a perfect plan.
-- **Simplicity over features.** Every file is standalone. Every function fits in your head.
-- **No frameworks when functions will do.** Pure Python. No magic.
-- **The hard part is the learning.** The decoder is hand-written, not Capstone. Understanding > convenience.
-- **Follow untrusted input.** Every vulnerability starts where the system touches data it doesn't control.
+- 🎯 **Build what you need.** This isn't a general-purpose RE framework. It's a weapon aimed at one target.
+- 🚀 **Ship fast, iterate later.** A working prototype beats a perfect plan.
+- 🧘 **Simplicity over features.** Every file is standalone. Every function fits in your head.
+- 🚫 **No frameworks when functions will do.** Pure Python. No magic.
+- 🧠 **The hard part is the learning.** The decoder is hand-written, not Capstone. Understanding > convenience.
+- 🔍 **Follow untrusted input.** Every vulnerability starts where the system touches data it doesn't control.
 
 ---
 
-## Extracted Firmware Stats
+## 📊 Extracted Firmware Stats
 
 ```
-Target:     Nintendo Switch Firmware 20.1.5
-Services:   74 ARM64 system binaries
-Total size: 261 MB of decompressed machine code
-Arch:       AArch64 (ARMv8-A, 64-bit)
-Format:     NSO (Nintendo Switch Object)
-Extracted:  hactool + prod.keys
+🎮 Target:     Nintendo Switch Firmware 20.1.5
+📦 Services:   74 ARM64 system binaries
+💾 Total size: 261 MB of decompressed machine code
+🔧 Arch:       AArch64 (ARMv8-A, 64-bit)
+📄 Format:     NSO (Nintendo Switch Object)
+🔑 Extracted:  hactool + prod.keys
 ```
 
 ---
 
-## References
+## 📚 References
 
-- [NSO Format Specification](https://switchbrew.org/wiki/NSO) -- Header layout we parse in loader.py
-- [Switch Syscalls](https://switchbrew.org/wiki/SVC) -- Horizon OS kernel calls
-- [ARM Architecture Reference Manual](https://developer.arm.com/documentation/ddi0487/latest/) -- AArch64 instruction encoding
-- [hactool](https://github.com/SciresM/hactool) -- NCA decryption tool
-- [Atmosphere-NX](https://github.com/Atmosphere-NX/Atmosphere) -- Switch custom firmware (reference for OS internals)
+| | Resource | Description |
+|---|----------|-------------|
+| 📄 | [NSO Format Specification](https://switchbrew.org/wiki/NSO) | Header layout we parse in loader.py |
+| 📡 | [Switch Syscalls](https://switchbrew.org/wiki/SVC) | Horizon OS kernel calls |
+| 📖 | [ARM Architecture Reference Manual](https://developer.arm.com/documentation/ddi0487/latest/) | AArch64 instruction encoding |
+| 🔑 | [hactool](https://github.com/SciresM/hactool) | NCA decryption tool |
+| 🌐 | [Atmosphere-NX](https://github.com/Atmosphere-NX/Atmosphere) | Switch custom firmware (OS internals reference) |
 
 ---
 
 <p align="center">
-  <strong>the tool finds the bug. the bug builds the career.</strong>
+  <strong>🗡️ the tool finds the bug. the bug builds the career. 🚀</strong>
   <br /><br />
   <em>built from scratch. no frameworks. no shortcuts. just bytes.</em>
 </p>

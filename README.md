@@ -29,6 +29,12 @@
 
 ---
 
+<p align="center">
+  <img src="screenshot.png" alt="SwitchBlade UI" />
+</p>
+
+---
+
 ## 🔍 What is this?
 
 A **purpose-built reverse engineering platform** for one target: the Nintendo Switch firmware.

@@ -47,6 +47,59 @@ def build_cfg(instructions, start, end):
     return cfg
 
 
+def _reachable(cfg, entry):
+    """BFS from entry → set of reachable nodes"""
+    visited = set()
+    queue = [entry]
+    while queue:
+        n = queue.pop()
+        if n in visited:
+            continue
+        visited.add(n)
+        queue.extend(cfg.get(n, []))
+    return visited
+
+
+def _dom_sets(cfg, entry, reachable):
+    """iterative dataflow → dom[n] = set of all dominators of n"""
+    preds = {n: [] for n in reachable}
+    for n in reachable:
+        for s in cfg.get(n, []):
+            if s in reachable:
+                preds[s].append(n)
+
+    dom = {n: reachable.copy() for n in reachable}
+    dom[entry] = {entry}
+    changed = True
+    while changed:
+        changed = False
+        for n in reachable - {entry}:
+            new = reachable.copy()
+            for p in preds[n]:
+                new &= dom[p]
+            new.add(n)
+            if new != dom[n]:
+                dom[n] = new
+                changed = True
+    return dom
+
+
+def domtree(cfg, entry):
+    """compute immediate dominators via iterative dataflow. returns {node: idom, entry: None}"""
+    reachable = _reachable(cfg, entry)
+    if len(reachable) == 1:
+        return {entry: None}
+
+    dom = _dom_sets(cfg, entry, reachable)
+
+    # extract idom: strict dominator with largest dom set (closest to n)
+    idom = {entry: None}
+    for n in reachable - {entry}:
+        strict = dom[n] - {n}
+        idom[n] = max(strict, key=lambda d: len(dom[d]))
+    return idom
+
+
 def find_xrefs(instructions):
     """collect all BL targets (call xrefs) and ADRP+ADD pairs (data xrefs) → list of (from, to, type)"""
     xrefs = []

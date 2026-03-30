@@ -59,19 +59,34 @@ body { background: #0a0a0a; color: #c8c8c8; font-family: 'JetBrains Mono', 'Fira
 .insn.ret .mnem { color: #ff6688; font-weight: bold; }
 .insn.load-store .mnem { color: #cc88ff; }
 
-/* cfg button */
-.cfg-btn { background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 11px; border-radius: 3px; }
-.cfg-btn:hover { background: #222; color: #fff; border-color: #e60012; }
+/* tab buttons */
+.tab-btn { background: #1a1a1a; border: 1px solid #333; color: #aaa; padding: 3px 10px; cursor: pointer; font-family: inherit; font-size: 11px; border-radius: 3px; }
+.tab-btn:hover { background: #222; color: #fff; border-color: #e60012; }
+.tab-btn.active { background: #1a1012; color: #e60012; border-color: #e60012; }
 
-/* cfg modal */
-#cfg-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; justify-content: center; align-items: center; }
-#cfg-modal.visible { display: flex; }
-#cfg-container { background: #0a0a0a; border: 1px solid #222; border-radius: 4px; width: 80vw; height: 80vh; overflow: auto; position: relative; padding: 20px; }
-#cfg-close { position: absolute; top: 10px; right: 14px; color: #666; cursor: pointer; font-size: 18px; z-index: 2; }
-#cfg-close:hover { color: #e60012; }
-.cfg-node { background: #111; border: 1px solid #2a2a2a; border-radius: 4px; padding: 8px; margin: 8px; font-size: 11px; display: inline-block; }
-.cfg-node .cfg-addr { color: #4a9eff; font-weight: bold; margin-bottom: 4px; }
-.cfg-node .cfg-target { color: #666; font-size: 10px; }
+/* xrefs */
+.xref-item { padding: 4px 12px; display: flex; gap: 12px; font-size: 12px; border-bottom: 1px solid #0e0e0e; }
+.xref-item:hover { background: #111; }
+.xref-item .xref-type { min-width: 40px; font-size: 10px; text-transform: uppercase; font-weight: bold; }
+.xref-item .xref-type.call { color: #44cc44; }
+.xref-item .xref-type.data { color: #cc88ff; }
+.xref-item .xref-from { color: #4a9eff; min-width: 80px; }
+.xref-item .xref-arrow { color: #333; }
+.xref-item .xref-to { color: #4a9eff; }
+.xref-summary { padding: 8px 12px; font-size: 11px; color: #555; border-bottom: 1px solid #1a1a1a; }
+
+/* domtree */
+.dom-node { padding: 3px 12px; display: flex; gap: 8px; font-size: 12px; border-bottom: 1px solid #0e0e0e; }
+.dom-node:hover { background: #111; }
+.dom-node .dom-addr { color: #4a9eff; min-width: 80px; }
+.dom-node .dom-arrow { color: #333; }
+.dom-node .dom-idom { color: #ffaa00; min-width: 80px; }
+.dom-node.entry .dom-addr { color: #e60012; font-weight: bold; }
+.dom-tree-indent { padding: 3px 12px; font-size: 12px; border-bottom: 1px solid #0e0e0e; white-space: pre; }
+.dom-tree-indent:hover { background: #111; }
+.dom-tree-indent .tree-addr { color: #4a9eff; }
+.dom-tree-indent .tree-pipe { color: #333; }
+
 
 /* empty states */
 .empty { color: #333; padding: 40px; text-align: center; font-size: 12px; }
@@ -113,19 +128,17 @@ body { background: #0a0a0a; color: #c8c8c8; font-family: 'JetBrains Mono', 'Fira
   <div id="disasm-panel">
     <div class="panel-header">
       <span id="disasm-header">disassembly</span>
-      <button class="cfg-btn" id="cfg-btn" style="display:none" onclick="showCFG()">CFG</button>
+      <div id="view-tabs" style="display:none;gap:4px">
+        <button class="tab-btn active" data-view="disasm" onclick="switchView('disasm')">ASM</button>
+        <button class="tab-btn" data-view="cfg" onclick="switchView('cfg')">CFG</button>
+        <button class="tab-btn" data-view="domtree" onclick="switchView('domtree')">DOM</button>
+        <button class="tab-btn" data-view="xrefs" onclick="switchView('xrefs')">XREFS</button>
+      </div>
     </div>
     <div id="disasm-list"><div class="empty">select a function</div></div>
   </div>
 </div>
 
-<!-- cfg modal -->
-<div id="cfg-modal">
-  <div id="cfg-container">
-    <div id="cfg-close" onclick="closeCFG()">&times;</div>
-    <div id="cfg-content"></div>
-  </div>
-</div>
 
 <script>
 const API = '';
@@ -201,7 +214,7 @@ async function selectService(name) {
   // clear disasm
   document.getElementById('disasm-list').innerHTML = '<div class="empty">select a function</div>';
   document.getElementById('disasm-header').textContent = 'disassembly';
-  document.getElementById('cfg-btn').style.display = 'none';
+  document.getElementById('view-tabs').style.display = 'none';
 
   // setup search
   document.getElementById('func-search').value = '';
@@ -233,15 +246,38 @@ async function selectFunction(addr) {
   // highlight
   document.querySelectorAll('.func-item').forEach(el => el.classList.toggle('active', el.dataset.addr === addr));
 
-  const disasm = await api(`/api/services/${currentService}/functions/${addr}/disasm`);
+  document.getElementById('disasm-header').textContent = `sub_${addr}`;
+  document.getElementById('view-tabs').style.display = 'flex';
+  currentView = 'disasm';
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'disasm'));
+  await renderDisasmView(document.getElementById('disasm-list'));
+}
 
-  document.getElementById('disasm-header').textContent = `sub_${addr}  (${disasm.length} instructions)`;
-  document.getElementById('cfg-btn').style.display = 'inline-block';
+// — view switching —
+let currentView = 'disasm';
 
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  const container = document.getElementById('disasm-list');
+
+  if (view === 'disasm') {
+    if (currentFunc) renderDisasmView(container);
+  } else if (view === 'cfg') {
+    renderCFGView(container);
+  } else if (view === 'domtree') {
+    renderDomtreeView(container);
+  } else if (view === 'xrefs') {
+    renderXrefsView(container);
+  }
+}
+
+// — disasm view —
+async function renderDisasmView(container) {
+  if (!currentService || !currentFunc) return;
+  const disasm = await api(`/api/services/${currentService}/functions/${currentFunc}/disasm`);
   const branches = new Set(['b', 'bl', 'br', 'blr', 'ret', 'cbz', 'cbnz', 'tbz', 'tbnz']);
-
-  const list = document.getElementById('disasm-list');
-  list.innerHTML = disasm.map(i => {
+  container.innerHTML = disasm.map(i => {
     let cls = 'insn';
     if (i.mnemonic === 'svc') cls += ' svc';
     else if (i.mnemonic === 'ret') cls += ' ret';
@@ -257,22 +293,17 @@ async function selectFunction(addr) {
   }).join('');
 }
 
-// — CFG modal —
-async function showCFG() {
+// — CFG view —
+async function renderCFGView(container) {
   if (!currentService || !currentFunc) return;
   const cfg = await api(`/api/services/${currentService}/functions/${currentFunc}/cfg`);
-  const modal = document.getElementById('cfg-modal');
-  const content = document.getElementById('cfg-content');
 
-  // collect all nodes and edges
   const entries = Object.entries(cfg);
   if (entries.length === 0) {
-    content.innerHTML = '<div class="empty">no branches in this function</div>';
-    modal.classList.add('visible');
+    container.innerHTML = '<div class="empty">no branches in this function</div>';
     return;
   }
 
-  // build SVG cfg
   const nodes = {};
   const edges = [];
   let allAddrs = new Set();
@@ -298,7 +329,6 @@ async function showCFG() {
   let svg = `<svg width="${svgW}" height="${svgH}" xmlns="http://www.w3.org/2000/svg">`;
   svg += '<defs><marker id="arrow" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 Z" fill="#e60012"/></marker></defs>';
 
-  // edges
   edges.forEach(([from, to]) => {
     const a = nodes[from], b = nodes[to];
     if (a && b) {
@@ -306,7 +336,6 @@ async function showCFG() {
     }
   });
 
-  // nodes
   sortedAddrs.forEach(addr => {
     const n = nodes[addr];
     const isSource = cfg[addr] !== undefined;
@@ -317,18 +346,79 @@ async function showCFG() {
   });
 
   svg += '</svg>';
-  content.innerHTML = svg;
-  modal.classList.add('visible');
+  container.innerHTML = svg;
 }
 
-function closeCFG() {
-  document.getElementById('cfg-modal').classList.remove('visible');
+// — domtree view —
+async function renderDomtreeView(container) {
+  if (!currentService || !currentFunc) return;
+  const idom = await api(`/api/services/${currentService}/functions/${currentFunc}/domtree`);
+
+  const entries = Object.entries(idom);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="empty">no dominator tree</div>';
+    return;
+  }
+
+  // build children map for tree rendering
+  const children = {};
+  let root = null;
+  entries.forEach(([node, parent]) => {
+    if (parent === null) { root = node; return; }
+    if (!children[parent]) children[parent] = [];
+    children[parent].push(node);
+  });
+
+  // sort children by address
+  Object.values(children).forEach(c => c.sort());
+
+  // render tree with indentation
+  let html = '';
+  function walk(node, prefix, isLast) {
+    const connector = prefix === '' ? '' : (isLast ? '└── ' : '├── ');
+    const pipe = prefix === '' ? '' : (isLast ? '    ' : '│   ');
+    html += `<div class="dom-tree-indent"><span class="tree-pipe">${prefix}${connector}</span><span class="tree-addr">${node}</span></div>`;
+    const kids = children[node] || [];
+    kids.forEach((kid, i) => {
+      walk(kid, prefix + pipe, i === kids.length - 1);
+    });
+  }
+
+  if (root) {
+    walk(root, '', true);
+  }
+
+  container.innerHTML = `<div class="xref-summary">${entries.length} nodes in dominator tree</div>` + html;
 }
 
-// close on escape
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeCFG();
-});
+// — xrefs view —
+async function renderXrefsView(container) {
+  if (!currentService) return;
+  const xrefs = await api(`/api/services/${currentService}/xrefs`);
+
+  // filter to xrefs involving current function's address range if we have one
+  const calls = xrefs.filter(x => x.type === 'call');
+  const data = xrefs.filter(x => x.type === 'data');
+
+  let html = `<div class="xref-summary">${calls.length} calls, ${data.length} data refs (${xrefs.length} total)</div>`;
+
+  // show first 500 to avoid killing the DOM
+  const shown = xrefs.slice(0, 500);
+  html += shown.map(x => `
+    <div class="xref-item">
+      <span class="xref-type ${x.type}">${x.type}</span>
+      <span class="xref-from">${x.from}</span>
+      <span class="xref-arrow">&rarr;</span>
+      <span class="xref-to">${x.to}</span>
+    </div>
+  `).join('');
+
+  if (xrefs.length > 500) {
+    html += `<div class="empty">${xrefs.length - 500} more xrefs not shown</div>`;
+  }
+
+  container.innerHTML = html;
+}
 
 // keyboard nav
 document.addEventListener('keydown', e => {
